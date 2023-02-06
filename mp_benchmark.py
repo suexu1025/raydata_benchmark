@@ -68,12 +68,11 @@ def rayddploader():
     paths_x = load_data(path, "*_x.npy")
     paths_y = load_data(path, "*_y.npy")
 
-    paths_x = [name.split('/')[-1] for name in paths_x]
-    paths_y = [name.split('/')[-1] for name in paths_y]
-
     @ray.remote
     def data_loading(paths_x, paths_y, idx):
         if 0:
+            paths_x = [name.split('/')[-1] for name in paths_x]
+            paths_y = [name.split('/')[-1] for name in paths_y]
             train_dataset = PytTrain(paths_x, paths_y, path)
             train_loader = DataLoader(
                 train_dataset,
