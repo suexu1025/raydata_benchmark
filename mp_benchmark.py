@@ -89,7 +89,7 @@ def rayddploader():
                 pass
         else:
             provider=FastFileMetadataProvider()
-
+            device = xm.xla_device()
             ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
             ds.to_torch()
 
