@@ -106,7 +106,7 @@ def ray_main(flags):
     label_ref = ray.put(paths_y)
     task_ref = []
     for i in range(4):
-        task_ref.append(data_loading.remote(features_ref,label_ref, i))
+        task_ref.append(data_loading.remote(features_ref,label_ref, i, flags))
         
     result = ray.get(task_ref)
 
