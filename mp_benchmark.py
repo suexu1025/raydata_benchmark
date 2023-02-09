@@ -98,7 +98,7 @@ def rayddploader():
     @ray.remote
     def data_loading(paths_x, paths_y, idx, flags):
         if flags.loader == "torch":
-            torch_dataloader(paths_x, paths_y):
+            torch_dataloader(paths_x, paths_y)
         else:
             ray_loader(paths_x)
     
@@ -117,7 +117,7 @@ def xla_main(local_rank, flags):
     paths_x = load_data(path, "*_x.npy")
     paths_y = load_data(path, "*_y.npy")
     if flags.loader == "torch":
-        torch_dataloader(paths_x, paths_y):
+        torch_dataloader(paths_x, paths_y)
     else:
         ray_loader(paths_x)
 
@@ -132,6 +132,8 @@ PARSER.add_argument('--loader', dest='loader type',  choices=["torch", "ray"], d
 
 if __name__ == '__main__':
     flags = PARSER.parse_args()
+    flags.mp = 'xla'
+    flags.loader = 'torch'
     if flags.mp == 'ray':
         ray.init(ignore_reinit_error=True)
         rayddploader()
