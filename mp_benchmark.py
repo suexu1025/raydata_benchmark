@@ -90,7 +90,7 @@ def torch_dataloader(paths_x, paths_y):
         training_time = (time.time() - start)/10
         print(f"Training time for pytorch: {training_time:.2f} seconds")
 
-def rayddploader():
+def ray_main(flags):
     path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
     paths_x = load_data(path, "*_x.npy")
     paths_y = load_data(path, "*_y.npy")
@@ -136,7 +136,7 @@ if __name__ == '__main__':
     flags.loader = 'torch'
     if flags.mp == 'ray':
         ray.init(ignore_reinit_error=True)
-        rayddploader()
+        ray_main(flags)
     elif flags.mp == 'xla':
         xmp.spawn(xla_main,  args=(flags,))
     else:
