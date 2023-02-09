@@ -46,9 +46,9 @@ class PytTrain(Dataset):
 paths_x = load_data(path, "*_x.npy")
 paths_y = load_data(path, "*_y.npy")
 
-def rayloader():
+def ray_loader(paths_x):
+    device = xm.xla_device()
     provider=FastFileMetadataProvider()
-
     ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
     ds.to_torch()
 
@@ -63,43 +63,44 @@ def rayloader():
     training_time = (time.time() - start)/10
     print(f"Training time for ray : {training_time:.2f} seconds")
 
+def torch_dataloader(paths_x, paths_y):
+        device = xm.xla_device()
+        paths_x = [name.split('/')[-1] for name in paths_x]
+        paths_y = [name.split('/')[-1] for name in paths_y]
+        train_dataset = PytTrain(paths_x, paths_y, path)
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=1,
+            shuffle=False,
+            sampler=None,
+            num_workers=4,
+            pin_memory=False,
+            drop_last=True,
+            persistent_workers=True
+        )
+
+        train_loader = pl.MpDeviceLoader(train_loader, device)
+
+        start = time.time()
+        for j in range(10):
+            for i, batch in enumerate(train_loader):
+                batch[0].to(device)
+                pass
+
+        training_time = (time.time() - start)/10
+        print(f"Training time for pytorch: {training_time:.2f} seconds")
+
 def rayddploader():
     path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
     paths_x = load_data(path, "*_x.npy")
     paths_y = load_data(path, "*_y.npy")
 
     @ray.remote
-    def data_loading(paths_x, paths_y, idx):
-        if 0:
-            paths_x = [name.split('/')[-1] for name in paths_x]
-            paths_y = [name.split('/')[-1] for name in paths_y]
-            train_dataset = PytTrain(paths_x, paths_y, path)
-            train_loader = DataLoader(
-                train_dataset,
-                batch_size=1,
-                shuffle=False,
-                sampler=None,
-                num_workers=4,
-                pin_memory=False,
-                drop_last=True,
-                persistent_workers=True
-            )  
-            for i, batch in enumerate(train_loader):
-                batch[0].to(device)
-                pass
+    def data_loading(paths_x, paths_y, idx, flags):
+        if flags.loader == "torch":
+            torch_dataloader(paths_x, paths_y):
         else:
-            provider=FastFileMetadataProvider()
-            device = xm.xla_device()
-            ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
-            ds.to_torch()
-
-            start = time.time()
-            for j in range(10):
-                for i, batch in enumerate(ds.iter_batches(batch_size=1)):
-                    batch = torch.as_tensor(batch[0])
-                    batch = xm.send_cpu_data_to_device(batch, device)
-                    batch.to(device)
-                    pass
+            ray_loader(paths_x)
     
     features_ref = ray.put(paths_x)
     label_ref = ray.put(paths_y)
@@ -111,44 +112,30 @@ def rayddploader():
 
 import torch_xla.distributed.xla_multiprocessing as xmp
 
-def xla_main(local_rank):
-    device = xm.xla_device()
+def xla_main(local_rank, flags):
     path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
     paths_x = load_data(path, "*_x.npy")
     paths_y = load_data(path, "*_y.npy")
-    paths_x = [name.split('/')[-1] for name in paths_x]
-    paths_y = [name.split('/')[-1] for name in paths_y]
-    train_dataset = PytTrain(paths_x, paths_y, path)
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=1,
-        shuffle=False,
-        sampler=None,
-        num_workers=4,
-        pin_memory=False,
-        drop_last=True,
-        persistent_workers=True
-    )
+    if flags.loader == "torch":
+        torch_dataloader(paths_x, paths_y):
+    else:
+        ray_loader(paths_x)
 
-    train_loader = pl.MpDeviceLoader(train_loader, device)
-
-    start = time.time()
-    for j in range(10):
-        for i, batch in enumerate(train_loader):
-            batch[0].to(device)
-            pass
-
-    training_time = (time.time() - start)/10
-    print(f"Training time for pytorch: {training_time:.2f} seconds")
     xm.rendezvous("exit")
 
+import argparse
+import os
+
+PARSER = argparse.ArgumentParser(description="benchmark dataloader")
+PARSER.add_argument('--mp', dest='multi-process runner',  choices=["xla", "ray"], default="xla")
+PARSER.add_argument('--loader', dest='loader type',  choices=["torch", "ray"], default="torch")
 
 if __name__ == '__main__':
-    mode = 0
-    if mode == 0:
+    flags = PARSER.parse_args()
+    if flags.mp == 'ray':
         ray.init(ignore_reinit_error=True)
         rayddploader()
-    elif mode == 1:
-        pass
+    elif flags.mp == 'xla':
+        xmp.spawn(xla_main,  args=(flags,))
     else:
-        xmp.spawn(xla_main)
+        pass
