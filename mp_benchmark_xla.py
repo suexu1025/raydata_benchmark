@@ -147,12 +147,14 @@ def xla_main(local_rank):
         ds.to_torch()
 
         start = time.time()
-        for j in range(10):
+        for j in range(2):
             for i, batch in enumerate(ds.iter_batches(batch_size=1)):
                 batch = torch.as_tensor(batch[0])
                 batch = xm.send_cpu_data_to_device(batch, device)
                 batch.to(device)
                 pass
+        training_time = (time.time() - start)/2
+        print(f"Training time for pytorch: {training_time:.2f} seconds")
 
     xm.rendezvous("exit")
 
