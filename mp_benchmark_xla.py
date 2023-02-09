@@ -70,7 +70,8 @@ def rayddploader():
 
     @ray.remote
     def data_loading(paths_x, paths_y, idx):
-        if 0:
+        device = xm.xla_device()
+        if 1:
             paths_x = [name.split('/')[-1] for name in paths_x]
             paths_y = [name.split('/')[-1] for name in paths_y]
             train_dataset = PytTrain(paths_x, paths_y, path)
@@ -89,7 +90,6 @@ def rayddploader():
                 pass
         else:
             provider=FastFileMetadataProvider()
-            device = xm.xla_device()
             ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
             ds.to_torch()
 
