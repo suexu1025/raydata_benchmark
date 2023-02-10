@@ -138,6 +138,14 @@ def xla_main(local_rank, flags):
 
     xm.rendezvous("exit")
 
+@ray.remote
+def consume(data) -> int:
+    num_batches = 0
+    for batch in data.iter_batches(batch_size=10):
+        num_batches += 1
+    return num_batches
+
+
 import argparse
 import os
 
@@ -147,7 +155,7 @@ PARSER.add_argument('--loader', dest='loader type',  choices=["torch", "ray"], d
 
 if __name__ == '__main__':
     flags = PARSER.parse_args()
-    flags.mp = 'xla'
+    flags.mp = 'ray'
     flags.loader = 'torch'
     if flags.mp == 'ray':
         ray.init(ignore_reinit_error=True)
@@ -161,5 +169,13 @@ if __name__ == '__main__':
         provider=FastFileMetadataProvider()
         ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
         xmp.spawn(ray_loader_,  args=(ds, ))
+    elif flags.mp == 'ray' and flags.loader == 'ray':
+        path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
+        paths_x = load_data(path, "*_x.npy")
+
+        provider=FastFileMetadataProvider()
+        ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
+
+        print(ray.get(consume.remote(ds)))
     else:
         pass
