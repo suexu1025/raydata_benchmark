@@ -49,7 +49,7 @@ paths_y = load_data(path, "*_y.npy")
 def ray_loader(paths_x):
     device = xm.xla_device()
     provider=FastFileMetadataProvider()
-    ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
+    ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider, parallelism = 60)
     ds.to_torch()
 
     start = time.time()
@@ -192,8 +192,9 @@ if __name__ == '__main__':
     elif flags.mp == 'ray':
         ray.init(ignore_reinit_error=True)
         ray_main(flags)
-    # elif flags.mp == 'xla':
-    #     xmp.spawn(xla_main,  args=(flags,))
+    elif flags.mp == 'xla':
+        print("using mode 3 \n")
+        xmp.spawn(xla_main,  args=(flags,))
     elif flags.mp == 'xla' and flags.loader == 'ray':
         print("using mode 4 \n")
         path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
@@ -203,6 +204,7 @@ if __name__ == '__main__':
         ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
         xmp.spawn(ray_loader_,  args=(ds, ))
     elif flags.mp == 'ray' and flags.loader == 'ray':
+        print("using mode 5 \n")
         path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
         paths_x = load_data(path, "*_x.npy")
 
