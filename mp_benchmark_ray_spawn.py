@@ -86,12 +86,12 @@ def torch_dataloader(paths_x, paths_y):
         paths_y = [name.split('/')[-1] for name in paths_y]
         local_rank = xm.get_ordinal()
         train_dataset = PytTrain(paths_x, paths_y, path)
-
+        from pprint import pprint
+        pprint(local_rank)
         train_sampler = DistributedSampler(
             train_dataset,
             num_replicas=4,
             rank=local_rank,
-            seed=None,
             drop_last=True,
         )
         train_loader = DataLoader(
