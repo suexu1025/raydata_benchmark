@@ -28,6 +28,7 @@ import torch
 import torch_xla.core.xla_model as xm
 import torch_xla.distributed.parallel_loader as pl
 import torch_xla.experimental.pjrt as pt
+from torch.utils.data.distributed import DistributedSampler
 
 class PytTrain(Dataset):
     def __init__(self, images, labels, dataset, **kwargs):
@@ -83,12 +84,21 @@ def torch_dataloader(paths_x, paths_y):
         device = xm.xla_device()
         paths_x = [name.split('/')[-1] for name in paths_x]
         paths_y = [name.split('/')[-1] for name in paths_y]
+
         train_dataset = PytTrain(paths_x, paths_y, path)
+
+        train_sampler = DistributedSampler(
+            train_dataset,
+            num_replicas=4,
+            rank=4,
+            seed=None,
+            drop_last=True,
+        )
         train_loader = DataLoader(
             train_dataset,
             batch_size=1,
             shuffle=False,
-            sampler=None,
+            sampler=train_sampler,
             num_workers=4,
             pin_memory=False,
             drop_last=True,
