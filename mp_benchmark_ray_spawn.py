@@ -27,6 +27,7 @@ from torch.utils.data import Dataset,DataLoader
 import torch
 import torch_xla.core.xla_model as xm
 import torch_xla.distributed.parallel_loader as pl
+import torch_xla.experimental.pjrt as pt
 
 class PytTrain(Dataset):
     def __init__(self, images, labels, dataset, **kwargs):
@@ -49,7 +50,7 @@ paths_y = load_data(path, "*_y.npy")
 def ray_loader(paths_x):
     device = xm.xla_device()
     provider=FastFileMetadataProvider()
-    ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider, parallelism = 60)
+    ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider, parallelism = 4)
     ds.to_torch()
 
     start = time.time()
@@ -152,6 +153,7 @@ def consume(data) -> int:
 @ray.remote
 class Worker:
     def __init__(self, rank: int):
+        pt._initialize_multiprocess(rank, 4)
         pass
 
     def train(self, shard) -> int:
@@ -185,7 +187,6 @@ if __name__ == '__main__':
         workers = [Worker.remote(i) for i in range(4)]
 
         shards = ds.split(n=4, locality_hints=workers)
-
         ray.get([w.train.remote(s) for w, s in zip(workers, shards)])
 
         #print(ray.get(consume.remote(ds)))
