@@ -184,6 +184,8 @@ if __name__ == '__main__':
         provider=FastFileMetadataProvider()
         ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
 
-        print(ray.get(consume.remote(ds)))
+        #workers = [consume.remote(i) for i in range(4)]
+
+        ray.get(consume.remote(ds) for i in range(4))
     else:
         pass
