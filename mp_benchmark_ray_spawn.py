@@ -84,13 +84,13 @@ def torch_dataloader(paths_x, paths_y):
         device = xm.xla_device()
         paths_x = [name.split('/')[-1] for name in paths_x]
         paths_y = [name.split('/')[-1] for name in paths_y]
-
+        local_rank = xm.get_ordinal()
         train_dataset = PytTrain(paths_x, paths_y, path)
 
         train_sampler = DistributedSampler(
             train_dataset,
             num_replicas=4,
-            rank=4,
+            rank=local_rank,
             seed=None,
             drop_last=True,
         )
@@ -191,8 +191,8 @@ PARSER.add_argument('--loader', dest='loader type',  choices=["torch", "ray"], d
 
 if __name__ == '__main__':
     flags = PARSER.parse_args()
-    flags.mp = 'ray'
-    flags.loader = 'ray'
+    flags.mp = 'xla'
+    flags.loader = 'xla'
     if flags.mp == 'ray' and flags.loader == 'ray':
         path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
         paths_x = load_data(path, "*_x.npy")
