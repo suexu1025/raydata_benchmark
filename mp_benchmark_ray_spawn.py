@@ -140,9 +140,13 @@ def xla_main(local_rank, flags):
 
 @ray.remote
 def consume(data) -> int:
-    num_batches = 0
-    for batch in data.iter_batches(batch_size=10):
-        num_batches += 1
+    start = time.time()
+    for j in range(10):
+        num_batches = 0
+        for batch in data.iter_batches(batch_size=1):
+            num_batches += 1
+    training_time = (time.time() - start)/10
+    print(f"Training time for ray : {training_time:.2f} seconds")
     return num_batches
 
 
