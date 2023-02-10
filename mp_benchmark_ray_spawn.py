@@ -63,7 +63,7 @@ def ray_loader(paths_x):
     training_time = (time.time() - start)/10
     print(f"Training time for ray : {training_time:.2f} seconds")
 
-def ray_loader_(local_rank, ds)::
+def ray_loader_(local_rank, ds):
     device = xm.xla_device()
     ds.to_torch()
 
