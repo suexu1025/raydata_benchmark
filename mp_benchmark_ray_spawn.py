@@ -158,7 +158,7 @@ class Worker:
         num_batches = 0
         start = time.time()
         for batch in shard.iter_batches(batch_size=1):
-            um_batches += 1
+            num_batches += 1
             pass
         training_time = (time.time() - start)
         print(f"Training time for ray : {training_time:.2f} seconds")
