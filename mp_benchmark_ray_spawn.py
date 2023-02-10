@@ -174,7 +174,7 @@ PARSER.add_argument('--loader', dest='loader type',  choices=["torch", "ray"], d
 
 if __name__ == '__main__':
     flags = PARSER.parse_args()
-    flags.mp = 'ray'
+    flags.mp = 'xla'
     flags.loader = 'ray'
     if flags.mp == 'ray' and flags.loader == 'ray':
         path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
@@ -192,9 +192,10 @@ if __name__ == '__main__':
     elif flags.mp == 'ray':
         ray.init(ignore_reinit_error=True)
         ray_main(flags)
-    elif flags.mp == 'xla':
-        xmp.spawn(xla_main,  args=(flags,))
+    # elif flags.mp == 'xla':
+    #     xmp.spawn(xla_main,  args=(flags,))
     elif flags.mp == 'xla' and flags.loader == 'ray':
+        print("using mode 4 \n")
         path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
         paths_x = load_data(path, "*_x.npy")
 
