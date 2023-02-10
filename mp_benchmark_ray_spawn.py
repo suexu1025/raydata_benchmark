@@ -157,9 +157,13 @@ class Worker:
         pass
 
     def train(self, shard) -> int:
+        device = xm.xla_device()
         num_batches = 0
         start = time.time()
         for batch in shard.iter_batches(batch_size=1):
+            batch = torch.as_tensor(batch[0])
+            batch = xm.send_cpu_data_to_device(batch, device)
+            batch.to(device)            
             num_batches += 1
             pass
         training_time = (time.time() - start)
@@ -176,7 +180,7 @@ PARSER.add_argument('--loader', dest='loader type',  choices=["torch", "ray"], d
 
 if __name__ == '__main__':
     flags = PARSER.parse_args()
-    flags.mp = 'xla'
+    flags.mp = 'ray'
     flags.loader = 'ray'
     if flags.mp == 'ray' and flags.loader == 'ray':
         path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
