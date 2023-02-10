@@ -186,6 +186,6 @@ if __name__ == '__main__':
 
         #workers = [consume.remote(i) for i in range(4)]
 
-        ray.get(consume.remote(ds) for i in range(4))
+        ray.get([consume.remote(ds) for i in range(4)])
     else:
         pass
