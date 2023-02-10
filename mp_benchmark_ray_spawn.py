@@ -149,6 +149,21 @@ def consume(data) -> int:
     print(f"Training time for ray : {training_time:.2f} seconds")
     return num_batches
 
+@ray.remote
+class Worker:
+    def __init__(self, rank: int):
+        pass
+
+    def train(self, shard) -> int:
+        num_batches = 0
+        start = time.time()
+        for batch in shard.iter_batches(batch_size=1):
+            um_batches += 1
+            pass
+        training_time = (time.time() - start)
+        print(f"Training time for ray : {training_time:.2f} seconds")
+        return shard.count()
+
 
 import argparse
 import os
@@ -188,8 +203,10 @@ if __name__ == '__main__':
         provider=FastFileMetadataProvider()
         ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
 
-        #workers = [consume.remote(i) for i in range(4)]
+        workers = [Worker.remote(i) for i in range(4)]
 
-        ray.get([consume.remote(ds) for i in range(4)])
+        shards = ds.split(n=4, locality_hints=workers)
+
+        ray.get([w.train.remote(s) for w, s in zip(workers, shards)])
     else:
         pass
