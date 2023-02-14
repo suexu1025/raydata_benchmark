@@ -116,25 +116,36 @@ def torch_dataloader(paths_x, paths_y):
         training_time = (time.time() - start)/10
         print(f"Training time for pytorch: {training_time:.2f} seconds")
 
+@ray.remote
+class LoaderWorker:
+    def __init__(self, rank: int):
+        pt._initialize_multiprocess(rank, 4)
+        pass
+
+    def load(self, paths_x) -> int:
+        torch_dataloader(paths_x, paths_y)
+        return 0
+
+
 def ray_main(flags):
     path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
     paths_x = load_data(path, "*_x.npy")
     paths_y = load_data(path, "*_y.npy")
 
-    @ray.remote
-    def data_loading(paths_x, paths_y, idx, flags):
-        if flags.loader == "torch":
-            torch_dataloader(paths_x, paths_y)
-        else:
-            ray_loader(paths_x)
+    # @ray.remote
+    # def data_loading(paths_x, paths_y, idx, flags):
+    #     if flags.loader == "torch":
+    #         torch_dataloader(paths_x, paths_y)
+    #     else:
+
+    #         ray_loader(paths_x)
     
+    workers = [LoaderWorker.remote(i) for i in range(4)]
     features_ref = ray.put(paths_x)
     label_ref = ray.put(paths_y)
-    task_ref = []
-    for i in range(4):
-        task_ref.append(data_loading.remote(features_ref,label_ref, i, flags))
-        
-    result = ray.get(task_ref)
+
+    ray.get([w.load.remote(s) for w, s in zip(workers, features_ref, label_ref)])
+
 
 import torch_xla.distributed.xla_multiprocessing as xmp
 
@@ -191,8 +202,8 @@ PARSER.add_argument('--loader', dest='loader type',  choices=["torch", "ray"], d
 
 if __name__ == '__main__':
     flags = PARSER.parse_args()
-    flags.mp = 'xla'
-    flags.loader = 'xla'
+    flags.mp = 'ray'
+    flags.loader = 'torch'
     if flags.mp == 'ray' and flags.loader == 'ray':
         path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
         paths_x = load_data(path, "*_x.npy")
