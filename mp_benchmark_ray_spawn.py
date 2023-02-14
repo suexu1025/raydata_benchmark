@@ -122,7 +122,7 @@ class LoaderWorker:
         pt._initialize_multiprocess(rank, 4)
         pass
 
-    def load(self, paths_x) -> int:
+    def load(self, paths_x, paths_y) -> int:
         torch_dataloader(paths_x, paths_y)
         return 0
 
