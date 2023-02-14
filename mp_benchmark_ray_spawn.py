@@ -144,7 +144,7 @@ def ray_main(flags):
     features_ref = ray.put(paths_x)
     label_ref = ray.put(paths_y)
 
-    ray.get([w.load.remote(features_ref, label_ref) for w, s in workers])
+    ray.get([w.load.remote(features_ref, label_ref) for w in workers])
 
 
 import torch_xla.distributed.xla_multiprocessing as xmp
