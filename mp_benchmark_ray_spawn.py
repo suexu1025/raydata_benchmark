@@ -120,13 +120,14 @@ def torch_dataloader(paths_x, paths_y, world_size):
 
 @ray.remote
 class LoaderWorker:
-    def __init__(self, rank: int, world_size:int):
+    def __init__(self, rank: int):
         pt._initialize_multiprocess(rank, 4)
-        self.world_size = world_size
         pass
 
     def load(self, paths_x, paths_y) -> int:
-        torch_dataloader(paths_x, paths_y, self.world_size)
+        world_size = xm.xrt_world_size()
+        pprint.pprint(world_size)
+        torch_dataloader(paths_x, paths_y, world_size)
         return 0
 
 
@@ -142,9 +143,9 @@ def ray_main(flags):
     #     else:
 
     #         ray_loader(paths_x)
-    
-    world_size = xm.xrt_world_size()
-    workers = [LoaderWorker.remote(i, world_size) for i in range(4)]
+    # num of worker per host
+    num_process = 4
+    workers = [LoaderWorker.remote(i) for i in range(num_process)]
     features_ref = ray.put(paths_x)
     label_ref = ray.put(paths_y)
     
