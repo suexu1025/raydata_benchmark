@@ -190,7 +190,6 @@ class Worker:
         local_rank = xm.get_ordinal()
         from pprint import pprint
         pprint(local_rank)
-        pprint(world_size)
 
         device = xm.xla_device()
         num_batches = 0
