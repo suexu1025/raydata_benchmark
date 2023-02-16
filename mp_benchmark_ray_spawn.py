@@ -157,8 +157,11 @@ def xla_main(local_rank, flags):
     path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
     paths_x = load_data(path, "*_x.npy")
     paths_y = load_data(path, "*_y.npy")
+    
+    world_size = xm.xrt_world_size()
+    pprint(world_size)
     if flags.loader == "torch":
-        torch_dataloader(paths_x, paths_y)
+        torch_dataloader(paths_x, paths_y, world_size)
     else:
         ray_loader(paths_x)
 
