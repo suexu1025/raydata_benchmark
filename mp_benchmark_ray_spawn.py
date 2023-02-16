@@ -80,12 +80,12 @@ def ray_loader_(local_rank, ds):
     training_time = (time.time() - start)/10
     print(f"Training time for ray : {training_time:.2f} seconds")
 
-def torch_dataloader(paths_x, paths_y):
+def torch_dataloader(paths_x, paths_y, world_size):
         device = xm.xla_device()
         paths_x = [name.split('/')[-1] for name in paths_x]
         paths_y = [name.split('/')[-1] for name in paths_y]
         local_rank = xm.get_ordinal()
-        world_size = xm.xrt_world_size()
+        
         train_dataset = PytTrain(paths_x, paths_y, path)
         from pprint import pprint
         pprint(local_rank)
@@ -120,12 +120,13 @@ def torch_dataloader(paths_x, paths_y):
 
 @ray.remote
 class LoaderWorker:
-    def __init__(self, rank: int):
+    def __init__(self, rank: int, world_size:int):
         pt._initialize_multiprocess(rank, 4)
+        self.world_size = world_size
         pass
 
     def load(self, paths_x, paths_y) -> int:
-        torch_dataloader(paths_x, paths_y)
+        torch_dataloader(paths_x, paths_y, self.world_size)
         return 0
 
 
@@ -142,10 +143,11 @@ def ray_main(flags):
 
     #         ray_loader(paths_x)
     
-    workers = [LoaderWorker.remote(i) for i in range(4)]
+    world_size = xm.xrt_world_size()
+    workers = [LoaderWorker.remote(i, world_size) for i in range(4)]
     features_ref = ray.put(paths_x)
     label_ref = ray.put(paths_y)
-
+    
     ray.get([w.load.remote(features_ref, label_ref) for w in workers])
 
 
