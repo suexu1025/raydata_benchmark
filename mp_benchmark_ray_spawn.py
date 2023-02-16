@@ -184,7 +184,6 @@ def consume(data) -> int:
 class Worker:
     def __init__(self, rank: int):
         pt._initialize_multiprocess(rank, 4)
-        pprint.pprint(xm.get_ordinal())
         pass
 
     def train(self, shard) -> int:
@@ -222,8 +221,7 @@ if __name__ == '__main__':
         workers = [Worker.remote(i) for i in range(4)]
 
         shards = ds.split(n=flags.world)#, locality_hints=workers)
-        print(xm.get_ordinal())
-        #ray.get([w.train.remote(s) for w, s in zip(workers, shards)])
+        ray.get([w.train.remote(s) for w, s in zip(workers, shards[0:3])])
 
         #print(ray.get(consume.remote(ds)))
     elif flags.mp == 'ray':
