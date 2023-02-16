@@ -148,7 +148,7 @@ def ray_main(flags):
     workers = [LoaderWorker.remote(i) for i in range(num_process)]
     features_ref = ray.put(paths_x)
     label_ref = ray.put(paths_y)
-    world_size = xm.xrt_world_size()
+    world_size = flags.world #xm.xrt_world_size()
     ray.get([w.load.remote(features_ref, label_ref, world_size) for w in workers])
 
 
