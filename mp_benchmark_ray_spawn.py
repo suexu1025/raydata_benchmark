@@ -220,7 +220,7 @@ if __name__ == '__main__':
         ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
         workers = [Worker.remote(i) for i in range(4)]
 
-        shards = ds.split(n=flags.world)#, locality_hints=workers)
+        shards = ds.split(n=4)#, locality_hints=workers)
         ray.get([w.train.remote(s) for w, s in zip(workers, shards[0:3])])
 
         #print(ray.get(consume.remote(ds)))
