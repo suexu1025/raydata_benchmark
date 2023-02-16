@@ -221,7 +221,7 @@ if __name__ == '__main__':
         workers = [Worker.remote(i) for i in range(4)]
 
         shards = ds.split(n=4)#, locality_hints=workers)
-        ray.get([w.train.remote(s) for w, s in zip(workers, shards[0:3])])
+        ray.get([w.train.remote(s) for w, s in zip(workers, shards)])
 
         #print(ray.get(consume.remote(ds)))
     elif flags.mp == 'ray':
