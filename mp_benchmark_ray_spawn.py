@@ -222,7 +222,7 @@ if __name__ == '__main__':
 
         shards = ds.split(n=flags.world)#, locality_hints=workers)
         print(xm.get_ordinal())
-        ray.get([w.train.remote(s) for w, s in zip(workers, shards)])
+        #ray.get([w.train.remote(s) for w, s in zip(workers, shards)])
 
         #print(ray.get(consume.remote(ds)))
     elif flags.mp == 'ray':
