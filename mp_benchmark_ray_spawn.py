@@ -159,7 +159,7 @@ def xla_main(local_rank, flags):
     paths_y = load_data(path, "*_y.npy")
     
     world_size = xm.xrt_world_size()
-    pprint(world_size)
+    pprint.pprint(world_size)
     if flags.loader == "torch":
         torch_dataloader(paths_x, paths_y, world_size)
     else:
