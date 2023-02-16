@@ -201,8 +201,8 @@ import argparse
 import os
 
 PARSER = argparse.ArgumentParser(description="benchmark dataloader")
-PARSER.add_argument('--mp', dest='multi-process runner',  choices=["xla", "ray"], default="xla")
-PARSER.add_argument('--loader', dest='loader type',  choices=["torch", "ray"], default="torch")
+PARSER.add_argument('mp', dest='multi-process runner',  choices=["xla", "ray"], default="xla")
+PARSER.add_argument('loader', dest='loader type',  choices=["torch", "ray"], default="torch")
 
 if __name__ == '__main__':
     flags = PARSER.parse_args()
