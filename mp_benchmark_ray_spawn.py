@@ -89,8 +89,7 @@ def torch_dataloader(paths_x, paths_y):
         train_dataset = PytTrain(paths_x, paths_y, path)
         from pprint import pprint
         pprint(local_rank)
-        pprint(local_rank)
-        
+        pprint(world_size)
         train_sampler = DistributedSampler(
             train_dataset,
             num_replicas=world_size,
@@ -102,7 +101,7 @@ def torch_dataloader(paths_x, paths_y):
             batch_size=1,
             shuffle=False,
             sampler=train_sampler,
-            num_workers=world_size,
+            num_workers=4,
             pin_memory=False,
             drop_last=True,
             persistent_workers=True
