@@ -187,14 +187,14 @@ class Worker:
         pass
 
     def train(self, shard) -> int:
-        device = xm.xla_device()
+        #device = xm.xla_device()
         num_batches = 0
         start = time.time()
         for j in range(10):
             for batch in shard.iter_batches(batch_size=1):
                 batch = torch.as_tensor(batch[0])
-                batch = xm.send_cpu_data_to_device(batch, device)
-                batch.to(device)            
+                #batch = xm.send_cpu_data_to_device(batch, device)
+                #batch.to(device)            
                 num_batches += 1
                 pass
         training_time = (time.time() - start)/10
