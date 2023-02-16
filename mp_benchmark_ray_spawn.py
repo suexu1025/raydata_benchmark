@@ -184,6 +184,7 @@ def consume(data) -> int:
 class Worker:
     def __init__(self, rank: int):
         pt._initialize_multiprocess(rank, 4)
+        pprint(xm.get_ordinal())
         pass
 
     def train(self, shard) -> int:
