@@ -124,8 +124,7 @@ class LoaderWorker:
         pt._initialize_multiprocess(rank, 4)
         pass
 
-    def load(self, paths_x, paths_y) -> int:
-        world_size = xm.xrt_world_size()
+    def load(self, paths_x, paths_y, world_size: int) -> int:
         print("worldsize")
         pprint.pprint(world_size)
         torch_dataloader(paths_x, paths_y, world_size)
@@ -149,8 +148,8 @@ def ray_main(flags):
     workers = [LoaderWorker.remote(i) for i in range(num_process)]
     features_ref = ray.put(paths_x)
     label_ref = ray.put(paths_y)
-    
-    ray.get([w.load.remote(features_ref, label_ref) for w in workers])
+    world_size = xm.xrt_world_size()
+    ray.get([w.load.remote(features_ref, label_ref, world_size) for w in workers])
 
 
 import torch_xla.distributed.xla_multiprocessing as xmp
@@ -209,6 +208,7 @@ import os
 PARSER = argparse.ArgumentParser(description="benchmark dataloader")
 PARSER.add_argument('-mp', '--mp', dest='mp',  choices=["xla", "ray"], default="xla")
 PARSER.add_argument('-loader', '--loader', dest='loader',  choices=["torch", "ray"], default="torch")
+PARSER.add_argument('-world_size', '--world_size', dest='world',  type=int, default=4)
 
 if __name__ == '__main__':
     flags = PARSER.parse_args()
