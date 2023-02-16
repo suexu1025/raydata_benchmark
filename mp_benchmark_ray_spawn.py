@@ -126,7 +126,8 @@ class LoaderWorker:
 
     def load(self, paths_x, paths_y) -> int:
         world_size = xm.xrt_world_size()
-        pprint.pprint("worldsize", world_size)
+        print("worldsize")
+        pprint.pprint(world_size)
         torch_dataloader(paths_x, paths_y, world_size)
         return 0
 
@@ -160,7 +161,8 @@ def xla_main(local_rank, flags):
     paths_y = load_data(path, "*_y.npy")
     
     world_size = xm.xrt_world_size()
-    pprint.pprint("world size", world_size)
+    print("worldsize")
+    pprint.pprint(world_size)
     if flags.loader == "torch":
         torch_dataloader(paths_x, paths_y, world_size)
     else:
