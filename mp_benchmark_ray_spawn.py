@@ -9,7 +9,7 @@ from ray.data.block import BlockMetadata
 from ray.data.datasource import FileMetadataProvider,FastFileMetadataProvider
 import time
 import numpy as np
-  
+import pprint
 
 def _rand_crop(image, label):
     low_x=low_y=low_z=0
