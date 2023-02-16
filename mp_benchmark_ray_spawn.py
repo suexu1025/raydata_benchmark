@@ -206,8 +206,6 @@ PARSER.add_argument('--loader', dest='loader type',  choices=["torch", "ray"], d
 
 if __name__ == '__main__':
     flags = PARSER.parse_args()
-    flags.mp = 'ray'
-    flags.loader = 'torch'
     if flags.mp == 'ray' and flags.loader == 'ray':
         path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
         paths_x = load_data(path, "*_x.npy")
