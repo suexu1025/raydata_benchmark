@@ -92,7 +92,7 @@ def torch_dataloader(paths_x, paths_y):
 
         train_sampler = DistributedSampler(
             train_dataset,
-            num_replicas=4,
+            num_replicas=world_size,
             rank=local_rank,
             drop_last=True,
         )
