@@ -219,7 +219,7 @@ if __name__ == '__main__':
     if flags.mp == 'ray' and flags.loader == 'ray':
         path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
         paths_x = load_data(path, "*_x.npy")
-        paths_x = random.sample(paths_x, len(paths_x)/(flags.world_size/4))
+        paths_x = random.sample(paths_x, len(paths_x)/(flags.world/4))
         provider=FastFileMetadataProvider()
         ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
         workers = [Worker.remote(i) for i in range(4)]
