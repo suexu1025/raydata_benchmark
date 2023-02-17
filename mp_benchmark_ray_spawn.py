@@ -221,8 +221,9 @@ if __name__ == '__main__':
         paths_x = load_data(path, "*_x.npy")
         host = flags.world // 4
         num_per_host = len(paths_x) // host
-        paths_x = numpy.random.choice(paths_x, size = num_per_host)
-        print(paths_x.size())
+        print(num_per_host)
+        paths_x = numpy.random.choice(paths_x, size = num_per_host).tolist()
+        print(len(paths_x))
         provider=FastFileMetadataProvider()
         ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
         workers = [Worker.remote(i) for i in range(4)]
