@@ -79,7 +79,7 @@ def ray_loader_(local_rank, ds):
     training_time = (time.time() - start)/10
     print(f"Training time for ray : {training_time:.2f} seconds")
 
-def torch_dataloader(paths_x, world_size):
+def torch_dataloader(paths, world_size):
         device = xm.xla_device()
         paths = os.path.join(paths, 'train')
         paths_x = load_data(paths, "*.JPEG")
