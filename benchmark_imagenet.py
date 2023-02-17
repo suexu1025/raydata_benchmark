@@ -78,7 +78,7 @@ def ray_loader_(local_rank, ds):
 
     training_time = (time.time() - start)/10
     print(f"Training time for ray : {training_time:.2f} seconds")
-
+import json
 def torch_dataloader(paths, world_size):
         device = xm.xla_device()
         with io.gfile.GFile(os.path.join(paths, 'imagenetindex_train.json')) as f:
