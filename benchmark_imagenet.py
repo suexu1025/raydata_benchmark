@@ -148,7 +148,7 @@ def ray_main(flags):
 import torch_xla.distributed.xla_multiprocessing as xmp
 
 def xla_main(local_rank, flags):
-    path = flags.data_dir
+    paths = flags.data_dir
 
     world_size = xm.xrt_world_size()
     print("worldsize")
