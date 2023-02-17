@@ -47,9 +47,6 @@ class PytTrain(Dataset):
         #data = self.train_transforms(data)     
         return data["image"]
 
-paths_x = load_data(path, "*_x.npy")
-paths_y = load_data(path, "*_y.npy")
-
 def ray_loader(paths_x):
     device = xm.xla_device()
     provider=FastFileMetadataProvider()
