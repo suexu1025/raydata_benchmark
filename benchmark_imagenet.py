@@ -41,7 +41,7 @@ class PytTrain(Dataset):
         return len(self.images)
 
     def __getitem__(self, idx):
-        with io.gfile.GFile(os.path.join(self.dataset, self.images[idx]), 'rb') as f:
+        with io.gfile.GFile(self.images[idx], 'rb') as f:
             data = {"image": Image.open(f)}
         #data = self.rand_crop(data)
         #data = self.train_transforms(data)     
@@ -84,7 +84,7 @@ def torch_dataloader(paths, world_size):
         with io.gfile.GFile(os.path.join(paths, 'imagenetindex_train.json')) as f:
             paths_x = json.load(f)
         paths = os.path.join(paths, 'train')
-        paths_x = [name.split('/')[-2:] for name in paths_x]
+        #paths_x = [name.split('/')[-2:] for name in paths_x]
         local_rank = xm.get_ordinal()
 
         train_dataset = PytTrain(paths_x, paths)
