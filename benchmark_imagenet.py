@@ -1,5 +1,5 @@
 import ray
-path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
+path = "gs://pytorch-datasets/imagenet"
 
 import gcsfs
 import glob
@@ -30,20 +30,22 @@ import torch_xla.distributed.parallel_loader as pl
 import torch_xla.experimental.pjrt as pt
 from torch.utils.data.distributed import DistributedSampler
 import torchvision
+from PIL import Image
+
 class PytTrain(Dataset):
-    def __init__(self, images, labels, dataset, **kwargs):
+    def __init__(self, images, dataset, **kwargs):
         self.dataset = dataset
-        self.images, self.labels = images, labels
+        self.images = images
 
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, idx):
-        with io.gfile.GFile(os.path.join(self.dataset, self.images[idx]), 'rb') as f, io.gfile.GFile(os.path.join(self.dataset, self.labels[idx]), 'rb') as g:
-            data = {"image": np.load(f), "label": np.load(g)}
+        with io.gfile.GFile(os.path.join(self.dataset, self.images[idx]), 'rb') as f:
+            data = {"image": Image.open(f)}
         #data = self.rand_crop(data)
         #data = self.train_transforms(data)     
-        return data["image"], data["label"]
+        return data["image"]
 
 paths_x = load_data(path, "*_x.npy")
 paths_y = load_data(path, "*_y.npy")
@@ -82,10 +84,13 @@ def ray_loader_(local_rank, ds):
 
 def torch_dataloader(paths_x, world_size):
         device = xm.xla_device()
-        #paths_x = [name.split('/')[-1] for name in paths_x]
+        paths = os.path.join(paths, 'train')
+        paths_x = load_data(paths, "*.JPEG")
+
+        paths_x = [name.split('/')[-1] for name in paths_x]
         local_rank = xm.get_ordinal()
-        
-        train_dataset = torchvision.datasets.ImageFolder(os.path.join(paths_x, 'train'),)
+
+        train_dataset = PytTrain(paths_x, paths)
         from pprint import pprint
         pprint(local_rank)
         pprint(world_size)
