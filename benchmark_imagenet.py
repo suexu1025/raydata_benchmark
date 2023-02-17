@@ -29,7 +29,7 @@ import torch_xla.core.xla_model as xm
 import torch_xla.distributed.parallel_loader as pl
 import torch_xla.experimental.pjrt as pt
 from torch.utils.data.distributed import DistributedSampler
-
+import torchvision
 class PytTrain(Dataset):
     def __init__(self, images, labels, dataset, **kwargs):
         self.dataset = dataset
