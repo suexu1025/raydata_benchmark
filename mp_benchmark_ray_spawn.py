@@ -213,7 +213,7 @@ PARSER = argparse.ArgumentParser(description="benchmark dataloader")
 PARSER.add_argument('-mp', '--mp', dest='mp',  choices=["xla", "ray"], default="xla")
 PARSER.add_argument('-loader', '--loader', dest='loader',  choices=["torch", "ray"], default="torch")
 PARSER.add_argument('-world_size', '--world_size', dest='world',  type=int, default=4)
-
+import random
 if __name__ == '__main__':
     flags = PARSER.parse_args()
     if flags.mp == 'ray' and flags.loader == 'ray':
