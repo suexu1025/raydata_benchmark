@@ -80,13 +80,12 @@ def ray_loader_(local_rank, ds):
     training_time = (time.time() - start)/10
     print(f"Training time for ray : {training_time:.2f} seconds")
 
-def torch_dataloader(paths_x, paths_y, world_size):
+def torch_dataloader(paths_x, world_size):
         device = xm.xla_device()
-        paths_x = [name.split('/')[-1] for name in paths_x]
-        paths_y = [name.split('/')[-1] for name in paths_y]
+        #paths_x = [name.split('/')[-1] for name in paths_x]
         local_rank = xm.get_ordinal()
         
-        train_dataset = PytTrain(paths_x, paths_y, path)
+        train_dataset = torchvision.datasets.ImageFolder(os.path.join(paths_x, 'train'),)
         from pprint import pprint
         pprint(local_rank)
         pprint(world_size)
@@ -110,13 +109,15 @@ def torch_dataloader(paths_x, paths_y, world_size):
         train_loader = pl.MpDeviceLoader(train_loader, device)
 
         start = time.time()
+        num = 0
         for j in range(10):
             for i, batch in enumerate(train_loader):
                 batch[0].to(device)
+                num = num + 1
                 pass
 
         training_time = (time.time() - start)/10
-        print(f"Training time for pytorch: {training_time:.2f} seconds")
+        print(f"Training time for {num} images pytorch: {training_time:.2f} seconds")
 
 @ray.remote
 class LoaderWorker:
@@ -147,17 +148,15 @@ def ray_main(flags):
 import torch_xla.distributed.xla_multiprocessing as xmp
 
 def xla_main(local_rank, flags):
-    path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
-    paths_x = load_data(path, "*_x.npy")
-    paths_y = load_data(path, "*_y.npy")
-    
+    path = flags.data_dir
+
     world_size = xm.xrt_world_size()
     print("worldsize")
     pprint.pprint(world_size)
     if flags.loader == "torch":
-        torch_dataloader(paths_x, paths_y, world_size)
+        torch_dataloader(paths, world_size)
     else:
-        ray_loader(paths_x)
+        ray_loader(paths)
 
     xm.rendezvous("exit")
 
