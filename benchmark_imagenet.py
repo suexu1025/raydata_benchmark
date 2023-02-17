@@ -82,7 +82,7 @@ import json
 def torch_dataloader(paths, world_size):
         device = xm.xla_device()
         with io.gfile.GFile(os.path.join(paths, 'imagenetindex_train.json')) as f:
-            path_x = json.load(f)
+            paths_x = json.load(f)
         paths = os.path.join(paths, 'train')
         paths_x = [name.split('/')[-2:] for name in paths_x]
         local_rank = xm.get_ordinal()
