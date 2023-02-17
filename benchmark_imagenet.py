@@ -124,32 +124,24 @@ class LoaderWorker:
         pt._initialize_multiprocess(rank, 4)
         pass
 
-    def load(self, paths_x, paths_y, world_size: int) -> int:
+    def load(self, paths_x, world_size: int) -> int:
         print("worldsize")
         pprint.pprint(world_size)
-        torch_dataloader(paths_x, paths_y, world_size)
+        torch_dataloader(paths_x, world_size)
         return 0
 
 
 def ray_main(flags):
-    path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
-    paths_x = load_data(path, "*_x.npy")
-    paths_y = load_data(path, "*_y.npy")
+    path = os.path.join(flags.data_dir, "train")
+    paths_x = load_data(path, "*.JPEG")
 
-    # @ray.remote
-    # def data_loading(paths_x, paths_y, idx, flags):
-    #     if flags.loader == "torch":
-    #         torch_dataloader(paths_x, paths_y)
-    #     else:
-
-    #         ray_loader(paths_x)
     # num of worker per host
     num_process = 4
     workers = [LoaderWorker.remote(i) for i in range(num_process)]
     features_ref = ray.put(paths_x)
-    label_ref = ray.put(paths_y)
+
     world_size = flags.world #xm.xrt_world_size()
-    ray.get([w.load.remote(features_ref, label_ref, world_size) for w in workers])
+    ray.get([w.load.remote(features_ref, world_size) for w in workers])
 
 
 import torch_xla.distributed.xla_multiprocessing as xmp
@@ -214,20 +206,20 @@ PARSER.add_argument('-mp', '--mp', dest='mp',  choices=["xla", "ray"], default="
 PARSER.add_argument('-loader', '--loader', dest='loader',  choices=["torch", "ray"], default="torch")
 PARSER.add_argument('-world_size', '--world_size', dest='world',  type=int, default=4)
 #PARSER.add_argument('-data_dir', '--data_dir', dest='data_dir',  type=str, default="gs://mlperf-dataset/data/2021_Brats_np/11_3d")
-#PARSER.add_argument('-data_dir', '--data_dir', dest='data_dir',  type=str, default="gs://pytorch-datasets/imagenet")
+PARSER.add_argument('-data_dir', '--data_dir', dest='data_dir',  type=str, default="gs://pytorch-datasets/imagenet")
 import numpy
 if __name__ == '__main__':
     flags = PARSER.parse_args()
     if flags.mp == 'ray' and flags.loader == 'ray':
-        path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
-        paths_x = load_data(path, "*_x.npy")
+        path = os.path.join(flags.data_dir, "train")
+        paths_x = load_data(path, "*.JPEG")
         host = flags.world // 4
         num_per_host = len(paths_x) // host
         print(num_per_host)
         paths_x = numpy.random.choice(paths_x, size = num_per_host).tolist()
         print(len(paths_x))
         provider=FastFileMetadataProvider()
-        ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
+        ds = ray.data.read_images(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
         workers = [Worker.remote(i) for i in range(4)]
 
         shards = ds.split(n=4, locality_hints=workers)
@@ -242,7 +234,7 @@ if __name__ == '__main__':
         xmp.spawn(xla_main,  args=(flags,))
     elif flags.mp == 'xla' and flags.loader == 'ray':
         print("using mode 4 \n")
-        path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
+        path = os.path.join(flags.data_dir, "train")
         paths_x = load_data(path, "*_x.npy")
 
         provider=FastFileMetadataProvider()
@@ -250,7 +242,7 @@ if __name__ == '__main__':
         xmp.spawn(ray_loader_,  args=(ds, ))
     elif flags.mp == 'ray' and flags.loader == 'ray':
         print("using mode 5 \n")
-        path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
+        path = os.path.join(flags.data_dir, "train")
         paths_x = load_data(path, "*_x.npy")
 
         provider=FastFileMetadataProvider()
