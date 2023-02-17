@@ -81,7 +81,7 @@ def ray_loader_(local_rank, ds):
 
 def torch_dataloader(paths, world_size):
         device = xm.xla_device()
-        with io.gfile.GFile(os.path.join(paths, 'imagenetindex_train.json') as f:
+        with io.gfile.GFile(os.path.join(paths, 'imagenetindex_train.json')) as f:
             path_x = json.load(f)
         paths = os.path.join(paths, 'train')
         paths_x = [name.split('/')[-2:] for name in paths_x]
