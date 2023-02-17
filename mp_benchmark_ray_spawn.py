@@ -202,7 +202,7 @@ class Worker:
                 num_batches += 1
                 pass
         training_time = (time.time() - start)/10
-        print(f"Training time for ray : {training_time:.2f} seconds")
+        print(f"Training time {num_batches} of images for ray :  {training_time:.2f} seconds")
         return shard.count()
 
 
