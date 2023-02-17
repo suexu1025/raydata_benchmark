@@ -213,13 +213,15 @@ PARSER = argparse.ArgumentParser(description="benchmark dataloader")
 PARSER.add_argument('-mp', '--mp', dest='mp',  choices=["xla", "ray"], default="xla")
 PARSER.add_argument('-loader', '--loader', dest='loader',  choices=["torch", "ray"], default="torch")
 PARSER.add_argument('-world_size', '--world_size', dest='world',  type=int, default=4)
-import random
+import numpy
 if __name__ == '__main__':
     flags = PARSER.parse_args()
     if flags.mp == 'ray' and flags.loader == 'ray':
         path = "gs://mlperf-dataset/data/2021_Brats_np/11_3d"
         paths_x = load_data(path, "*_x.npy")
-        paths_x = random.sample(paths_x, int(len(paths_x)/(flags.world/4)))
+        host = flags.world // 4
+        num_per_host = len(paths_x) // host
+        paths_x = numpy.random.choice(paths_x, size = num_per_host)
         provider=FastFileMetadataProvider()
         ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
         workers = [Worker.remote(i) for i in range(4)]
