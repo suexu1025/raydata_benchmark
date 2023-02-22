@@ -42,7 +42,7 @@ class PytTrain(Dataset):
 
     def __getitem__(self, idx):
         with io.gfile.GFile(self.images[idx], 'rb') as f:
-            data = {"image": numpy.asarray(Image.open(f))}
+            data = {"image": np.asarray(Image.open(f))}
         #data = self.rand_crop(data)
         #data = self.train_transforms(data)     
         return data["image"]
@@ -99,7 +99,7 @@ def torch_dataloader(paths, world_size):
         )
         train_loader = DataLoader(
             train_dataset,
-            batch_size=1,
+            batch_size=256,
             shuffle=False,
             sampler=train_sampler,
             num_workers=4,
