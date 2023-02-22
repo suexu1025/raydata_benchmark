@@ -30,22 +30,27 @@ import torch_xla.distributed.parallel_loader as pl
 import torch_xla.experimental.pjrt as pt
 from torch.utils.data.distributed import DistributedSampler
 import torchvision
+import torchvision.transforms as transforms
 from PIL import Image
 
 class PytTrain(Dataset):
     def __init__(self, images, dataset, **kwargs):
         self.dataset = dataset
         self.images = images
-
+        self.train_transforms = transforms.Compose([
+            transforms.RandomResizedCrop(img_dim=224),
+            transforms.ToTensor(),
+        ])
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, idx):
         with io.gfile.GFile(self.images[idx], 'rb') as f:
-            data = {"image": np.asarray(Image.open(f))}
+            data = np.asarray(Image.open(f))
         #data = self.rand_crop(data)
-        #data = self.train_transforms(data)     
-        return data["image"]
+        data = self.train_transforms(data)    
+
+        return data
 
 def ray_loader(paths_x):
     device = xm.xla_device()
