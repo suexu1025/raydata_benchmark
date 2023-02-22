@@ -42,7 +42,7 @@ class PytTrain(Dataset):
 
     def __getitem__(self, idx):
         with io.gfile.GFile(self.images[idx], 'rb') as f:
-            data = {"image": Image.open(f)}
+            data = {"image": numpy.asarray(Image.open(f))}
         #data = self.rand_crop(data)
         #data = self.train_transforms(data)     
         return data["image"]
