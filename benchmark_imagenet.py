@@ -47,10 +47,11 @@ class PytTrain(Dataset):
     def __getitem__(self, idx):
         with io.gfile.GFile(self.images[idx], 'rb') as f:
             data = np.asarray(Image.open(f))
+        image = torch.as_tensor(data)
         #data = self.rand_crop(data)
-        data = self.train_transforms(data)    
+        image = self.train_transforms(image)    
 
-        return data
+        return image
 
 def ray_loader(paths_x):
     device = xm.xla_device()
