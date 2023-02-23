@@ -38,7 +38,7 @@ class PytTrain(Dataset):
         self.dataset = dataset
         self.images = images
         self.train_transforms = transforms.Compose([
-            transforms.RandomResizedCrop(img_dim=224),
+            transforms.RandomResizedCrop(size=224),
             transforms.ToTensor(),
         ])
     def __len__(self):
