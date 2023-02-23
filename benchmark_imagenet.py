@@ -46,7 +46,7 @@ class PytTrain(Dataset):
 
     def __getitem__(self, idx):
         with io.gfile.GFile(self.images[idx], 'rb') as f:
-            data = np.asarray(Image.open(f).convert("RGB"))
+            data = Image.open(f).convert("RGB")
         #image = torch.as_tensor(data)
         #data = self.rand_crop(data)
         data = self.train_transforms(data)    
