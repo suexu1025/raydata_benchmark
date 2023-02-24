@@ -225,6 +225,9 @@ if __name__ == '__main__':
     if flags.mp == 'ray' and flags.loader == 'ray':
         with io.gfile.GFile(os.path.join(flags.data_dir, 'imagenetindex_train.json')) as f:
             paths_x = json.load(f)
+        paths_x = [name.split('train/')[-1] for name in paths_x]
+        path = os.path.join(flags.data_dir, "train")
+        paths_x = [os.path.join(path, name) for name in paths_x]
         host = flags.world // 4
         num_per_host = len(paths_x) // host
         print(num_per_host)
