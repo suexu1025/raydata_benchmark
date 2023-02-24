@@ -218,7 +218,7 @@ PARSER.add_argument('-mp', '--mp', dest='mp',  choices=["xla", "ray"], default="
 PARSER.add_argument('-loader', '--loader', dest='loader',  choices=["torch", "ray"], default="torch")
 PARSER.add_argument('-world_size', '--world_size', dest='world',  type=int, default=4)
 #PARSER.add_argument('-data_dir', '--data_dir', dest='data_dir',  type=str, default="gs://mlperf-dataset/data/2021_Brats_np/11_3d")
-PARSER.add_argument('-data_dir', '--data_dir', dest='data_dir',  type=str, default="gs://pytorch-datasets/imagenet")
+PARSER.add_argument('-data_dir', '--data_dir', dest='data_dir',  type=str, default="/mnt/disks/persist/imagenet")
 import numpy
 if __name__ == '__main__':
     flags = PARSER.parse_args()
