@@ -235,6 +235,7 @@ if __name__ == '__main__':
         print(len(paths_x))
         provider=FastFileMetadataProvider()
         ds = ray.data.read_images(paths_x, size=(224, 224))
+        print(ds.take(1)[0])
         #ds.map(transforms.RandomResizedCrop(size=224))
         workers = [Worker.remote(i) for i in range(4)]
 
