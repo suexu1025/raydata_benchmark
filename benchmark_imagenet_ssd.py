@@ -88,7 +88,7 @@ def torch_dataloader(paths, world_size):
         device = xm.xla_device()
         #paths_x = [name.split('/')[-2:] for name in paths_x]
         local_rank = xm.get_ordinal()
-
+        img_dim = 224
         train_dataset = torchvision.datasets.ImageFolder(
         os.path.join(paths, 'train'),
         transforms.Compose([
