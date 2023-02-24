@@ -218,9 +218,9 @@ import numpy
 if __name__ == '__main__':
     flags = PARSER.parse_args()
     if flags.mp == 'ray' and flags.loader == 'ray':
-        paths = os.path.join(flags.data_dir, "train")
-        with io.gfile.GFile(os.path.join(paths, 'imagenetindex_train.json')) as f:
+        with io.gfile.GFile(os.path.join(flags.data_dir, 'imagenetindex_train.json')) as f:
             paths_x = json.load(f)
+        paths = os.path.join(flags.data_dir, "train")
         #paths_x = load_data(path, "*.JPEG")
         host = flags.world // 4
         num_per_host = len(paths_x) // host
@@ -235,10 +235,11 @@ if __name__ == '__main__':
         ray.get([w.train.remote(s) for w, s in zip(workers, shards)])
 
         #print(ray.get(consume.remote(ds)))
-    elif flags.mp == 'ray':
+    elif flags.mp == 'ray' and flags.loader == 'torch':
+        print("using mode 2 \n")
         ray.init(ignore_reinit_error=True)
         ray_main(flags)
-    elif flags.mp == 'xla':
+    elif flags.mp == 'xla' and flags.loader == 'torch':
         print("using mode 3 \n")
         xmp.spawn(xla_main,  args=(flags,))
     elif flags.mp == 'xla' and flags.loader == 'ray':
@@ -249,18 +250,5 @@ if __name__ == '__main__':
         provider=FastFileMetadataProvider()
         ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
         xmp.spawn(ray_loader_,  args=(ds, ))
-    elif flags.mp == 'ray' and flags.loader == 'ray':
-        print("using mode 5 \n")
-        path = os.path.join(flags.data_dir, "train")
-        paths_x = load_data(path, "*_x.npy")
-
-        provider=FastFileMetadataProvider()
-        ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
-
-        workers = [Worker.remote(i) for i in range(4)]
-
-        shards = ds.split(n=4, locality_hints=workers)
-
-        ray.get([w.train.remote(s) for w, s in zip(workers, shards)])
     else:
         pass
