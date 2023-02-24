@@ -61,7 +61,7 @@ def ray_loader(paths_x):
 
     start = time.time()
     for j in range(10):
-        for i, batch in enumerate(ds.iter_batches(batch_size=1)):
+        for i, batch in enumerate(ds.iter_batches(batch_size=256)):
             batch = torch.as_tensor(batch[0])
             batch = xm.send_cpu_data_to_device(batch, device)
             batch.to(device)
@@ -76,7 +76,7 @@ def ray_loader_(local_rank, ds):
 
     start = time.time()
     for j in range(10):
-        for i, batch in enumerate(ds.iter_batches(batch_size=1)):
+        for i, batch in enumerate(ds.iter_batches(batch_size=256)):
             batch = torch.as_tensor(batch[0])
             batch = xm.send_cpu_data_to_device(batch, device)
             batch.to(device)
@@ -227,6 +227,7 @@ if __name__ == '__main__':
         print(len(paths_x))
         provider=FastFileMetadataProvider()
         ds = ray.data.read_images(paths_x,filesystem=gcsfs.GCSFileSystem())
+        ds.map(transforms.RandomResizedCrop(size=224))
         workers = [Worker.remote(i) for i in range(4)]
 
         shards = ds.split(n=4, locality_hints=workers)
