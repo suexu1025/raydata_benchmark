@@ -89,6 +89,8 @@ def torch_dataloader(paths, world_size):
         #paths_x = [name.split('/')[-2:] for name in paths_x]
         local_rank = xm.get_ordinal()
         img_dim = 224
+        normalize = transforms.Normalize(
+        mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         train_dataset = torchvision.datasets.ImageFolder(
         os.path.join(paths, 'train'),
         transforms.Compose([
