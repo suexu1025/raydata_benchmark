@@ -220,15 +220,13 @@ if __name__ == '__main__':
     if flags.mp == 'ray' and flags.loader == 'ray':
         with io.gfile.GFile(os.path.join(flags.data_dir, 'imagenetindex_train.json')) as f:
             paths_x = json.load(f)
-        paths = os.path.join(flags.data_dir, "train")
-        #paths_x = load_data(path, "*.JPEG")
         host = flags.world // 4
         num_per_host = len(paths_x) // host
         print(num_per_host)
         paths_x = numpy.random.choice(paths_x, size = num_per_host).tolist()
         print(len(paths_x))
         provider=FastFileMetadataProvider()
-        ds = ray.data.read_images(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
+        ds = ray.data.read_images(paths_x,filesystem=gcsfs.GCSFileSystem())
         workers = [Worker.remote(i) for i in range(4)]
 
         shards = ds.split(n=4, locality_hints=workers)
@@ -244,11 +242,9 @@ if __name__ == '__main__':
         xmp.spawn(xla_main,  args=(flags,))
     elif flags.mp == 'xla' and flags.loader == 'ray':
         print("using mode 4 \n")
-        path = os.path.join(flags.data_dir, "train")
-        paths_x = load_data(path, "*_x.npy")
-
-        provider=FastFileMetadataProvider()
-        ds = ray.data.read_numpy(paths_x,filesystem=gcsfs.GCSFileSystem(), meta_provider=provider)
+        with io.gfile.GFile(os.path.join(flags.data_dir, 'imagenetindex_train.json')) as f:
+            paths_x = json.load(f)
+        ds = ray.data.read_images(paths_x,filesystem=gcsfs.GCSFileSystem())
         xmp.spawn(ray_loader_,  args=(ds, ))
     else:
         pass
