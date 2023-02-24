@@ -199,9 +199,9 @@ class Worker:
         num_batches = 0
         start = time.time()
         for j in range(10):
-            for batch in shard.iter_torch_batches(batch_size=1):
+            for batch in shard.iter_torch_batches(batch_size=128):
                 print(batch.shape)
-                batch = torch.as_tensor(batch['image'])
+                batch = torch.as_tensor(batch)
                 batch = xm.send_cpu_data_to_device(batch, device)
                 batch.to(device)            
                 num_batches += 1
