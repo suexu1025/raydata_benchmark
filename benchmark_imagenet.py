@@ -218,8 +218,10 @@ import numpy
 if __name__ == '__main__':
     flags = PARSER.parse_args()
     if flags.mp == 'ray' and flags.loader == 'ray':
-        path = os.path.join(flags.data_dir, "train")
-        paths_x = load_data(path, "*.JPEG")
+        paths = os.path.join(flags.data_dir, "train")
+        with io.gfile.GFile(os.path.join(paths, 'imagenetindex_train.json')) as f:
+            paths_x = json.load(f)
+        #paths_x = load_data(path, "*.JPEG")
         host = flags.world // 4
         num_per_host = len(paths_x) // host
         print(num_per_host)
