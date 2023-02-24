@@ -178,7 +178,7 @@ def consume(data) -> int:
     start = time.time()
     for j in range(10):
         num_batches = 0
-        for batch in data.iter_batches(batch_size=1):
+        for batch in data.iter_batches(batch_size=256):
             num_batches += 1
     training_time = (time.time() - start)/10
     print(f"Training time for ray : {training_time:.2f} seconds")
@@ -199,8 +199,8 @@ class Worker:
         num_batches = 0
         start = time.time()
         for j in range(10):
-            for batch in shard.iter_batches(batch_size=1):
-                batch = torch.as_tensor(batch[0])
+            for batch in shard.iter_batches(batch_size=256):
+                batch = torch.as_tensor(batch)
                 batch = xm.send_cpu_data_to_device(batch, device)
                 batch.to(device)            
                 num_batches += 1
