@@ -200,7 +200,7 @@ class Worker:
         start = time.time()
         for j in range(10):
             for batch in shard.iter_batches(batch_size=256):
-                batch = torch.as_tensor(batch)
+                batch = torch.as_tensor(batch['image'])
                 batch = xm.send_cpu_data_to_device(batch, device)
                 batch.to(device)            
                 num_batches += 1
@@ -235,7 +235,7 @@ if __name__ == '__main__':
         print(len(paths_x))
         provider=FastFileMetadataProvider()
         ds = ray.data.read_images(paths_x, size=(224, 224))
-        print(ds.take(1)[0])
+        print(ds.take(1)[0]["image"].size)
         #ds.map(transforms.RandomResizedCrop(size=224))
         workers = [Worker.remote(i) for i in range(4)]
 
