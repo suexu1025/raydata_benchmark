@@ -200,7 +200,7 @@ class Worker:
         start = time.time()
         for j in range(10):
             for batch in shard.iter_torch_batches(batch_size=1):
-                print(batch.shape)
+                print(batch)
                 batch = torch.as_tensor(batch)
                 batch = xm.send_cpu_data_to_device(batch, device)
                 batch.to(device)            
@@ -221,6 +221,7 @@ PARSER.add_argument('-world_size', '--world_size', dest='world',  type=int, defa
 #PARSER.add_argument('-data_dir', '--data_dir', dest='data_dir',  type=str, default="gs://mlperf-dataset/data/2021_Brats_np/11_3d")
 PARSER.add_argument('-data_dir', '--data_dir', dest='data_dir',  type=str, default="/mnt/disks/persist/imagenet")
 import numpy
+
 if __name__ == '__main__':
     flags = PARSER.parse_args()
     if flags.mp == 'ray' and flags.loader == 'ray':
