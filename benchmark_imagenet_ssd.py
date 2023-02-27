@@ -95,9 +95,9 @@ def torch_dataloader(paths, world_size):
         os.path.join(paths, 'train'),
         transforms.Compose([
             transforms.RandomResizedCrop(img_dim),
-            transforms.RandomHorizontalFlip(),
+            #transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            normalize,
+            #normalize,
         ]))
         from pprint import pprint
         pprint(local_rank)
