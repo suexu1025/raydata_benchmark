@@ -146,16 +146,16 @@ class LoaderWorker:
 
 
 def ray_main(flags):
-    with io.gfile.GFile(os.path.join(flags.data_dir, 'imagenetindex_train.json')) as f:
-        paths_x = json.load(f)
-    paths_x = [name.split('train/')[-1] for name in paths_x]
-    path = os.path.join(flags.data_dir, "train")
-    paths_x = [os.path.join(path, name) for name in paths_x]
+    # with io.gfile.GFile(os.path.join(flags.data_dir, 'imagenetindex_train.json')) as f:
+    #     paths_x = json.load(f)
+    # paths_x = [name.split('train/')[-1] for name in paths_x]
+    # path = os.path.join(flags.data_dir, "train")
+    # paths_x = [os.path.join(path, name) for name in paths_x]
 
     # num of worker per host
     num_process = 4
     workers = [LoaderWorker.remote(i) for i in range(num_process)]
-    features_ref = ray.put(paths_x)
+    features_ref = ray.put(flags.data_dir)
 
     world_size = flags.world #xm.xrt_world_size()
     ray.get([w.load.remote(features_ref, world_size) for w in workers])
