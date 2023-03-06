@@ -52,7 +52,7 @@ class PytTrain(Dataset):
 
         return data
 
-def ray_loader_torch(paths_x):
+def ray_loader_torch(local_rank, paths_x):
     device = xm.xla_device()
     ds = ray.data.read_images(paths_x)
     ds.map(transforms.RandomResizedCrop(size=224))
@@ -69,7 +69,7 @@ def ray_loader_torch(paths_x):
     training_time = (time.time() - start)/10
     print(f"Training time for ray : {training_time:.2f} seconds")
 
-def ray_loader_(local_rank, ds):
+def ray_loader_(local_rank, filelist):
     device = xm.xla_device()
     ds.to_torch()
 
@@ -257,10 +257,20 @@ if __name__ == '__main__':
         xmp.spawn(xla_main,  args=(flags,))
     elif flags.mp == 'xla' and flags.loader == 'ray':
         print("using mode 4 \n")
+        # with io.gfile.GFile(os.path.join(flags.data_dir, 'imagenetindex_train.json')) as f:
+        #     paths_x = json.load(f)
+        # ds = ray.data.read_images(paths_x)
+        # #ds.map(transforms.RandomResizedCrop(size=224))
+        # xmp.spawn(ray_loader_,  args=(ds, ))
         with io.gfile.GFile(os.path.join(flags.data_dir, 'imagenetindex_train.json')) as f:
-            paths_x = json.load(f)
-        ds = ray.data.read_images(paths_x)
-        #ds.map(transforms.RandomResizedCrop(size=224))
+            paths_x = json.load(f)        
+        paths_x = [name.split('train/')[-1] for name in paths_x]
+        path = os.path.join(flags.data_dir, "train")
+        paths_x = [os.path.join(path, name) for name in paths_x]
+        host = flags.world // 4
+        num_per_host = len(paths_x) // host
+        print(num_per_host)
+        paths_x = numpy.random.choice(paths_x, size = num_per_host).tolist()
         xmp.spawn(ray_loader_,  args=(ds, ))
     else:
         pass
