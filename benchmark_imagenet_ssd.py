@@ -227,7 +227,7 @@ import numpy
 def crop_transform(arr: np.ndarray) -> np.ndarray:
     # Notice here that the ndarray is of shape (batch_size, 2, 2)
     # Multiply each element in the ndarray by a factor of 2
-    return [0:224, 0:224]
+    return arr[0:224, 0:224]
 
 if __name__ == '__main__':
     flags = PARSER.parse_args()
