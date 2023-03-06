@@ -224,6 +224,11 @@ PARSER.add_argument('-world_size', '--world_size', dest='world',  type=int, defa
 PARSER.add_argument('-data_dir', '--data_dir', dest='data_dir',  type=str, default="/mnt/disks/persist/imagenet")
 import numpy
 
+def crop_transform(arr: np.ndarray) -> np.ndarray:
+    # Notice here that the ndarray is of shape (batch_size, 2, 2)
+    # Multiply each element in the ndarray by a factor of 2
+    return [0:224, 0:224]
+
 if __name__ == '__main__':
     flags = PARSER.parse_args()
     if flags.mp == 'ray' and flags.loader == 'ray':
@@ -238,7 +243,9 @@ if __name__ == '__main__':
         paths_x = numpy.random.choice(paths_x, size = num_per_host).tolist()
         print(len(paths_x))
         provider=FastFileMetadataProvider()
-        ds = ray.data.read_images(paths_x, size=(224, 224), mode="RGB")
+        #ds = ray.data.read_images(paths_x, size=(224, 224), mode="RGB")
+        ds = ray.data.read_images(paths_x, mode="RGB")
+        ds.map_batches(crop_transform)
         print(ds)
         print(ds.take(1)[0]["image"].size)
         #ds.map(transforms.RandomResizedCrop(size=224))
