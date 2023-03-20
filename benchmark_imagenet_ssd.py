@@ -267,7 +267,7 @@ if __name__ == '__main__':
             shards = ds.split(n=4, locality_hints=workers)
         else:
 
-            splits = create_shuffle_pipeline(os.path.join(flags.data_dir, "train"), 1,  flags.world, 224)
+            splits = create_shuffle_image_data_pipeline(os.path.join(flags.data_dir, "train"), 1,  flags.world, 224)
             workers = [Worker.remote(i) for i in range(4)]
             begin = flags.world * xm.get_ordinal() * 4
             end = begin + shard_size * 4
