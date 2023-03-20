@@ -7,6 +7,7 @@ import os
 import tensorflow.io as io
 from ray.data.block import BlockMetadata
 from ray.data.datasource import FileMetadataProvider,FastFileMetadataProvider
+from ray.data.dataset_pipeline import DatasetPipeline
 import time
 import numpy as np
 import pprint
