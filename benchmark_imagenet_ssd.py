@@ -232,26 +232,45 @@ def crop_transform(arr: np.ndarray) -> np.ndarray:
 if __name__ == '__main__':
     flags = PARSER.parse_args()
     if flags.mp == 'ray' and flags.loader == 'ray':
-        with io.gfile.GFile(os.path.join(flags.data_dir, 'imagenetindex_train.json')) as f:
-            paths_x = json.load(f)
-        paths_x = [name.split('train/')[-1] for name in paths_x]
-        path = os.path.join(flags.data_dir, "train")
-        paths_x = [os.path.join(path, name) for name in paths_x]
-        host = flags.world // 4
-        num_per_host = len(paths_x) // host
-        print(num_per_host)
-        paths_x = numpy.random.choice(paths_x, size = num_per_host).tolist()
-        print(len(paths_x))
-        provider=FastFileMetadataProvider()
-        #ds = ray.data.read_images(paths_x, size=(224, 224), mode="RGB")
-        ds = ray.data.read_images(paths_x, mode="RGB")
-        ds.map_batches(crop_transform)
-        print(ds)
-        print(ds.take(1)[0]["image"].size)
-        #ds.map(transforms.RandomResizedCrop(size=224))
-        workers = [Worker.remote(i) for i in range(4)]
+        if 0:
+            with io.gfile.GFile(os.path.join(flags.data_dir, 'imagenetindex_train.json')) as f:
+                paths_x = json.load(f)
+            paths_x = [name.split('train/')[-1] for name in paths_x]
+            path = os.path.join(flags.data_dir, "train")
+            paths_x = [os.path.join(path, name) for name in paths_x]
+            host = flags.world // 4
+            num_per_host = len(paths_x) // host
+            print(num_per_host)
+            paths_x = numpy.random.choice(paths_x, size = num_per_host).tolist()
+            print(len(paths_x))
+            provider=FastFileMetadataProvider()
+            ds = ray.data.read_images(paths_x, size=(224, 224), mode="RGB")
+            #ds = ray.data.read_images(paths_x, mode="RGB")
+            #ds.map_batches(crop_transform)
+            print(ds)
+            print(ds.take(1)[0]["image"].size)
+            #ds.map(transforms.RandomResizedCrop(size=224))
+            workers = [Worker.remote(i) for i in range(4)]
 
-        shards = ds.split(n=4, locality_hints=workers)
+            shards = ds.split(n=4, locality_hints=workers)
+        else:
+            def create_shuffle_pipeline(
+            training_data_dir: str, num_epochs: int, num_shards: int, image_resize,
+        ) -> List[DatasetPipeline]:
+
+            return (
+                ray.data.read_images(training_data_dir, size=(image_resize, image_resize), mode = "RGB")
+                .random_shuffle_each_window()
+                .split(num_shards, equal=True)
+            )
+            
+
+            splits = create_shuffle_pipeline(os.path.join(flags.data_dir, "train"), 1,  flags.world, 224)
+            workers = [Worker.remote(i) for i in range(4)]
+            begin = flags.world * xm.get_ordinal() * 4
+            end = begin + shard_size * 4
+            shards = splits[begin:end]
+
         ray.get([w.train.remote(s) for w, s in zip(workers, shards)])
 
         #print(ray.get(consume.remote(ds)))
