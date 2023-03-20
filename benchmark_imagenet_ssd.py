@@ -11,6 +11,16 @@ import time
 import numpy as np
 import pprint
 
+def create_shuffle_image_data_pipeline(
+training_data_dir: str, num_epochs: int, num_shards: int, image_resize,
+) -> List[DatasetPipeline]:
+
+    return (
+        ray.data.read_images(training_data_dir, size=(image_resize, image_resize), mode = "RGB")
+        .random_shuffle_each_window()
+        .split(num_shards, equal=True)
+    )
+
 def _rand_crop(image, label):
     low_x=low_y=low_z=0
     high_x=high_y=high_z=128
@@ -254,17 +264,7 @@ if __name__ == '__main__':
 
             shards = ds.split(n=4, locality_hints=workers)
         else:
-            def create_shuffle_pipeline(
-            training_data_dir: str, num_epochs: int, num_shards: int, image_resize,
-        ) -> List[DatasetPipeline]:
-
-            return (
-                ray.data.read_images(training_data_dir, size=(image_resize, image_resize), mode = "RGB")
-                .random_shuffle_each_window()
-                .split(num_shards, equal=True)
-            )
             
-
             splits = create_shuffle_pipeline(os.path.join(flags.data_dir, "train"), 1,  flags.world, 224)
             workers = [Worker.remote(i) for i in range(4)]
             begin = flags.world * xm.get_ordinal() * 4
