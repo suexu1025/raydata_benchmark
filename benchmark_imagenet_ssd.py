@@ -10,6 +10,7 @@ from ray.data.datasource import FileMetadataProvider,FastFileMetadataProvider
 import time
 import numpy as np
 import pprint
+from typing import List
 
 def create_shuffle_image_data_pipeline(
 training_data_dir: str, num_epochs: int, num_shards: int, image_resize,
@@ -264,7 +265,7 @@ if __name__ == '__main__':
 
             shards = ds.split(n=4, locality_hints=workers)
         else:
-            
+
             splits = create_shuffle_pipeline(os.path.join(flags.data_dir, "train"), 1,  flags.world, 224)
             workers = [Worker.remote(i) for i in range(4)]
             begin = flags.world * xm.get_ordinal() * 4
