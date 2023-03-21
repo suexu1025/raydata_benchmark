@@ -282,7 +282,7 @@ if __name__ == '__main__':
             shards = splits[begin:end]
             transform = transforms.Compose([
                 transforms.Lambda(to_tensor),
-                transforms.CenterCrop(224))
+                transforms.CenterCrop(224)
             ])
             preprocessor.transform(shards) 
 
