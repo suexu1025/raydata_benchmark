@@ -36,7 +36,7 @@ training_data_dir: str, num_epochs: int, num_shards: int, image_resize,
 
     return (
         ray.data.read_images(training_data_dir, mode = "RGB")
-        .random_shuffle_each_window()
+        #DatasetPipeline.random_shuffle_each_window()
         .split(num_shards, equal=True)
     )
 
