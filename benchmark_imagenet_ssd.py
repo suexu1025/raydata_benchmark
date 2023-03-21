@@ -13,6 +13,15 @@ import numpy as np
 import pprint
 from typing import List
 
+from torch.utils.data import Dataset,DataLoader
+import torch
+import torch_xla.core.xla_model as xm
+import torch_xla.distributed.parallel_loader as pl
+import torch_xla.experimental.pjrt as pt
+from torch.utils.data.distributed import DistributedSampler
+import torchvision
+import torchvision.transforms as transforms
+
 def to_tensor(batch: np.ndarray) -> torch.Tensor:
     tensor = torch.as_tensor(batch, dtype=torch.float)
     # (B, H, W, C) -> (B, C, H, W)
@@ -43,14 +52,6 @@ def load_data(path, files_pattern):
     assert len(data) > 0, f"Found no data at {path}"
     return data
 
-from torch.utils.data import Dataset,DataLoader
-import torch
-import torch_xla.core.xla_model as xm
-import torch_xla.distributed.parallel_loader as pl
-import torch_xla.experimental.pjrt as pt
-from torch.utils.data.distributed import DistributedSampler
-import torchvision
-import torchvision.transforms as transforms
 
 class PytTrain(Dataset):
     def __init__(self, images, dataset, **kwargs):
