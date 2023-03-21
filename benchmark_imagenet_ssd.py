@@ -13,12 +13,20 @@ import numpy as np
 import pprint
 from typing import List
 
+def to_tensor(batch: np.ndarray) -> torch.Tensor:
+    tensor = torch.as_tensor(batch, dtype=torch.float)
+    # (B, H, W, C) -> (B, C, H, W)
+    tensor = tensor.permute(0, 3, 1, 2).contiguous()
+    # [0., 255.] -> [0., 1.]
+    tensor = tensor.div(255)
+    return tensor
+
 def create_shuffle_image_data_pipeline(
 training_data_dir: str, num_epochs: int, num_shards: int, image_resize,
 ) -> List[DatasetPipeline]:
 
     return (
-        ray.data.read_images(training_data_dir, size=(image_resize, image_resize), mode = "RGB")
+        ray.data.read_images(training_data_dir, mode = "RGB")
         .random_shuffle_each_window()
         .split(num_shards, equal=True)
     )
@@ -272,6 +280,11 @@ if __name__ == '__main__':
             begin = flags.world * xm.get_ordinal() * 4
             end = begin + shard_size * 4
             shards = splits[begin:end]
+            transform = transforms.Compose([
+                transforms.Lambda(to_tensor),
+                transforms.CenterCrop(224))
+            ])
+            preprocessor.transform(shards) 
 
         ray.get([w.train.remote(s) for w, s in zip(workers, shards)])
 
