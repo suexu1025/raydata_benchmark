@@ -285,9 +285,10 @@ if __name__ == '__main__':
 
             splits = create_shuffle_image_data_pipeline(os.path.join(flags.data_dir, "train"), 1,  4, 224)
             workers = [Worker.remote(i) for i in range(4)]
-            begin = flags.world * xm.get_ordinal() * 4
-            end = begin + shard_size * 4
-            shards = splits[begin:end]
+            # begin = flags.world * xm.get_ordinal() * 4
+            # end = begin + shard_size * 4
+            # shards = splits[begin:end]
+            shards = splits
             print(len(shards))
             # transform = transforms.Compose([
             #     transforms.Lambda(to_tensor),
