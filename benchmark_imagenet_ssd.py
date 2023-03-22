@@ -279,7 +279,7 @@ if __name__ == '__main__':
             print(ds.take(1)[0]["image"].size)
             #ds.map(transforms.RandomResizedCrop(size=224))
             workers = [Worker.remote(i) for i in range(4)]
-
+            print(xm.get_ordinal())
             shards = ds.split(n=4, locality_hints=workers)
         else:
 
