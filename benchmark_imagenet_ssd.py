@@ -31,14 +31,20 @@ def to_tensor(batch: np.ndarray) -> torch.Tensor:
     return tensor
 
 def create_shuffle_image_data_pipeline(
-training_data_dir: str, num_epochs: int, num_shards: int, image_resize,
+training_data_dir: str, num_epochs: int, num_shards: int, image_resize: int == 0,
 ) -> List[DatasetPipeline]:
-
-    return (
-        ray.data.read_images(training_data_dir, mode = "RGB")
+    if image_resize > 0:
+        return (
+        ray.data.read_images(training_data_dir, size = (image_resize, image_resize), mode = "RGB")
         #DatasetPipeline.random_shuffle_each_window()
         .split(num_shards, equal=True)
-    )
+        ) 
+    else:
+        return (
+            ray.data.read_images(training_data_dir, mode = "RGB")
+            #DatasetPipeline.random_shuffle_each_window()
+            .split(num_shards, equal=True)
+        )
 
 def _rand_crop(image, label):
     low_x=low_y=low_z=0
@@ -243,6 +249,7 @@ PARSER.add_argument('-loader', '--loader', dest='loader',  choices=["torch", "ra
 PARSER.add_argument('-world_size', '--world_size', dest='world',  type=int, default=4)
 #PARSER.add_argument('-data_dir', '--data_dir', dest='data_dir',  type=str, default="gs://mlperf-dataset/data/2021_Brats_np/11_3d")
 PARSER.add_argument('-data_dir', '--data_dir', dest='data_dir',  type=str, default="/mnt/disks/persist/imagenet")
+PARSER.add_argument('-load_mode', '--load_mode', dest='load_mode',  type=str, default="simple")
 import numpy
 
 def crop_transform(arr: np.ndarray) -> np.ndarray:
@@ -253,7 +260,7 @@ def crop_transform(arr: np.ndarray) -> np.ndarray:
 if __name__ == '__main__':
     flags = PARSER.parse_args()
     if flags.mp == 'ray' and flags.loader == 'ray':
-        if 0:
+        if flags.load_mode == 'simple':
             with io.gfile.GFile(os.path.join(flags.data_dir, 'imagenetindex_train.json')) as f:
                 paths_x = json.load(f)
             paths_x = [name.split('train/')[-1] for name in paths_x]
@@ -276,7 +283,7 @@ if __name__ == '__main__':
             shards = ds.split(n=4, locality_hints=workers)
         else:
 
-            splits = create_shuffle_image_data_pipeline(os.path.join(flags.data_dir, "train"), 1,  flags.world, 224)
+            splits = create_shuffle_image_data_pipeline(os.path.join(flags.data_dir, "train"), 1,  4, 224)
             workers = [Worker.remote(i) for i in range(4)]
             begin = flags.world * xm.get_ordinal() * 4
             end = begin + shard_size * 4
