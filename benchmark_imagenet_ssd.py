@@ -281,11 +281,12 @@ if __name__ == '__main__':
             begin = flags.world * xm.get_ordinal() * 4
             end = begin + shard_size * 4
             shards = splits[begin:end]
-            transform = transforms.Compose([
-                transforms.Lambda(to_tensor),
-                transforms.CenterCrop(224)
-            ])
-            preprocessor.transform(shards) 
+            print(len(shards))
+            # transform = transforms.Compose([
+            #     transforms.Lambda(to_tensor),
+            #     transforms.CenterCrop(224)
+            # ])
+            # preprocessor.transform(shards) 
 
         ray.get([w.train.remote(s) for w, s in zip(workers, shards)])
 
