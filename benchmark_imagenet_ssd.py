@@ -297,7 +297,7 @@ if __name__ == '__main__':
             # paths_x = numpy.random.choice(paths_x, size = num_per_host).tolist()
             # print(len(paths_x))
             provider=FastFileMetadataProvider()
-            ds = ray.data.read_images(paths_x, size=(224, 224), mode="RGB")
+            ds = ray.data.read_images(paths_x, size=(224, 224), mode="RGB", meta_provider=provider)
             #ds = ray.data.read_images(paths_x, mode="RGB")
             #ds.map_batches(crop_transform)
             print(ds)
