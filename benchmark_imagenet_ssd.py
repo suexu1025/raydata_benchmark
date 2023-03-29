@@ -22,6 +22,10 @@ from torch.utils.data.distributed import DistributedSampler
 import torchvision
 import torchvision.transforms as transforms
 
+def random_split_data(paths, num_shards, shard_id):
+    x = [a.tolist() for a in np.array_split(paths, num_shards)]
+    return x[shard_id]
+    
 def to_tensor(batch: np.ndarray) -> torch.Tensor:
     tensor = torch.as_tensor(batch, dtype=torch.float)
     # (B, H, W, C) -> (B, C, H, W)
@@ -242,10 +246,18 @@ class Worker:
 @ray.remote
 class PJRTWorker:
     def __init__(self, rank: int):
-        pt._initialize_single_process(rank, 1)
+        pt._initialize_multiprocess(rank, 4)
         pass
 
-    def load(self) -> int:
+    def load(self, data_dir) -> int:
+        with io.gfile.GFile(os.path.join(data_dir, 'imagenetindex_train.json')) as f:
+            paths_x = json.load(f)
+        paths_x = [name.split('train/')[-1] for name in paths_x]
+        path = os.path.join(flags.data_dir, "train")
+        paths_x = [os.path.join(path, name) for name in paths_x]  
+
+        path = random_split_data(path, pjrt.global_device_count(), xm.get_ordinal())
+        ds = ray.data.read_images(path, size=(224, 224), mode="RGB")
         local_rank = xm.get_ordinal()
         from pprint import pprint
         pprint(local_rank)
@@ -305,14 +317,9 @@ if __name__ == '__main__':
             #ds.map(transforms.RandomResizedCrop(size=224))
             workers = [Worker.remote(i) for i in range(4)]
             shards = ds.split(n=4, locality_hints=workers)
+            ray.get([w.train.remote(s) for w, s in zip(workers, shards)])
         elif flags.load_mode == 'pjrt_thread':
-            with io.gfile.GFile(os.path.join(flags.data_dir, 'imagenetindex_train.json')) as f:
-                paths_x = json.load(f)
-            paths_x = [name.split('train/')[-1] for name in paths_x]
-            path = os.path.join(flags.data_dir, "train")
-            paths_x = [os.path.join(path, name) for name in paths_x]   
-            ds = ray.data.read_images(paths_x, size=(224, 224), mode="RGB")
-
+            ray.get([w.load.remote(flags.data_dir) for w in workers])
         else:
 
             splits = create_shuffle_image_data_pipeline(os.path.join(flags.data_dir, "train"), 1,  4, 224)
@@ -327,8 +334,6 @@ if __name__ == '__main__':
             #     transforms.CenterCrop(224)
             # ])
             # preprocessor.transform(shards) 
-
-        ray.get([w.train.remote(s) for w, s in zip(workers, shards)])
 
         #print(ray.get(consume.remote(ds)))
     elif flags.mp == 'ray' and flags.loader == 'torch':
