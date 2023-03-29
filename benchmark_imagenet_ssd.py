@@ -239,6 +239,31 @@ class Worker:
         print(f"Training time {num_batches} of images for ray :  {training_time:.2f} seconds")
         return shard.count()
 
+@ray.remote
+class PJRTWorker:
+    def __init__(self, rank: int):
+        pt._initialize_single_process(rank, 1)
+        pass
+
+    def load(self) -> int:
+        local_rank = xm.get_ordinal()
+        from pprint import pprint
+        pprint(local_rank)
+
+        device = xm.xla_device()
+        num_batches = 0
+        start = time.time()
+        for j in range(10):
+            for batch in shard.iter_torch_batches(batch_size=256):
+                batch = torch.as_tensor(batch["image"])
+                batch = xm.send_cpu_data_to_device(batch, device)
+                batch.to(device)            
+                num_batches += 1
+                pass
+        training_time = (time.time() - start)/10
+        print(f"Training time {num_batches} of images for ray :  {training_time:.2f} seconds")
+        return shard.count()
+        pjrt._spawn_threads(load, )
 
 import argparse
 import os
@@ -266,11 +291,11 @@ if __name__ == '__main__':
             paths_x = [name.split('train/')[-1] for name in paths_x]
             path = os.path.join(flags.data_dir, "train")
             paths_x = [os.path.join(path, name) for name in paths_x]
-            host = flags.world // 4
-            num_per_host = len(paths_x) // host
-            print(num_per_host)
-            paths_x = numpy.random.choice(paths_x, size = num_per_host).tolist()
-            print(len(paths_x))
+            # host = flags.world // 4
+            # num_per_host = len(paths_x) // host
+            # print(num_per_host)
+            # paths_x = numpy.random.choice(paths_x, size = num_per_host).tolist()
+            # print(len(paths_x))
             provider=FastFileMetadataProvider()
             ds = ray.data.read_images(paths_x, size=(224, 224), mode="RGB")
             #ds = ray.data.read_images(paths_x, mode="RGB")
@@ -278,9 +303,16 @@ if __name__ == '__main__':
             print(ds)
             print(ds.take(1)[0]["image"].size)
             #ds.map(transforms.RandomResizedCrop(size=224))
-            workers = [Worker.remote(i) for i in range(4)]
-            print(xm.get_ordinal())
+            workers = [Worker.remote(i) for i in range(4)])
             shards = ds.split(n=4, locality_hints=workers)
+        elif flags.load_mode == 'pjrt_thread':
+            with io.gfile.GFile(os.path.join(flags.data_dir, 'imagenetindex_train.json')) as f:
+                paths_x = json.load(f)
+            paths_x = [name.split('train/')[-1] for name in paths_x]
+            path = os.path.join(flags.data_dir, "train")
+            paths_x = [os.path.join(path, name) for name in paths_x]   
+            ds = ray.data.read_images(paths_x, size=(224, 224), mode="RGB")
+
         else:
 
             splits = create_shuffle_image_data_pipeline(os.path.join(flags.data_dir, "train"), 1,  4, 224)
