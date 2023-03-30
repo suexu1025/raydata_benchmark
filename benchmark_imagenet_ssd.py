@@ -334,7 +334,8 @@ if __name__ == '__main__':
         elif flags.load_mode == 'pjrt_thread':
             num_workers = pt.global_device_count()
             workers = [PJRTWorker.remote(i) for i in range(num_workers)]
-            ray.get([w.verify.remote(i) for w in workers])
+            idx = range(0, num_workers, 1)
+            ray.get([w.verify.remote(i) for w, i in zip(workers, idx)])
             #ray.get([w.load.remote(flags.data_dir, flags.bs) for w in workers])
         else:
 
