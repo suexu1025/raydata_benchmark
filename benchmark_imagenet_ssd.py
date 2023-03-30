@@ -224,7 +224,7 @@ class Worker:
         pt._initialize_multiprocess(rank, 4)
         pass
 
-    def train(self, shard) -> int:
+    def train(self, shard, batch_size) -> int:
         local_rank = xm.get_ordinal()
         from pprint import pprint
         pprint(local_rank)
@@ -233,7 +233,7 @@ class Worker:
         num_batches = 0
         start = time.time()
         for j in range(10):
-            for batch in shard.iter_torch_batches(batch_size=256):
+            for batch in shard.iter_torch_batches(batch_size=batch_size):
                 batch = torch.as_tensor(batch["image"])
                 batch = xm.send_cpu_data_to_device(batch, device)
                 batch.to(device)            
@@ -318,7 +318,7 @@ if __name__ == '__main__':
             #ds.map(transforms.RandomResizedCrop(size=224))
             workers = [Worker.remote(i) for i in range(4)]
             shards = ds.split(n=4, locality_hints=workers)
-            ray.get([w.train.remote(s) for w, s in zip(workers, shards)])
+            ray.get([w.train.remote(s, flags.bs) for w, s in zip(workers, shards)])
         elif flags.load_mode == 'pjrt_thread':
             num_workers = prjt.global_device_count()
             workers = [PJRTWorker.remote(i) for i in range(num_workers)]
