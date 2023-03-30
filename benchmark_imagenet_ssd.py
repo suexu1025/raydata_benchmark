@@ -251,19 +251,25 @@ class PJRTWorker:
         pt._initialize_multiprocess(rank, 4)
         pass
 
+    def verify(self, i) -> int:
+        local_rank = xm.get_ordinal()
+        from pprint import pprint
+        pprint(local_rank)    
+
     def load(self, data_dir, bs) -> int:
         with io.gfile.GFile(os.path.join(data_dir, 'imagenetindex_train.json')) as f:
             paths_x = json.load(f)
 
         subset = random_split_data(len(paths_x), pt.global_device_count(), xm.get_ordinal())
-
-        paths_x = paths_x[subset]
+        #subset = random_split_data(len(paths_x), 4, 0)
+        paths_x = [ paths_x[i] for i in subset]
 
         # compond the path
         paths_x = [name.split('train/')[-1] for name in paths_x]
         path = os.path.join(flags.data_dir, "train")
         paths_x = [os.path.join(path, name) for name in paths_x]  
-        ds = ray.data.read_images(path, size=(224, 224), mode="RGB")
+
+        ds = ray.data.read_images(paths_x, size=(224, 224), mode="RGB")
         local_rank = xm.get_ordinal()
         from pprint import pprint
         pprint(local_rank)
@@ -328,7 +334,8 @@ if __name__ == '__main__':
         elif flags.load_mode == 'pjrt_thread':
             num_workers = pt.global_device_count()
             workers = [PJRTWorker.remote(i) for i in range(num_workers)]
-            ray.get([w.load.remote(flags.data_dir, flags.bs) for w in workers])
+            ray.get([w.verify.remote(i) for w in workers])
+            #ray.get([w.load.remote(flags.data_dir, flags.bs) for w in workers])
         else:
 
             splits = create_shuffle_image_data_pipeline(os.path.join(flags.data_dir, "train"), 1,  4, 224)
