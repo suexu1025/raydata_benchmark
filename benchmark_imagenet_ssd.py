@@ -249,7 +249,7 @@ class PJRTWorker:
         pt._initialize_multiprocess(rank, 4)
         pass
 
-    def load(self, data_dir) -> int:
+    def load(self, data_dir, bs) -> int:
         with io.gfile.GFile(os.path.join(data_dir, 'imagenetindex_train.json')) as f:
             paths_x = json.load(f)
         paths_x = [name.split('train/')[-1] for name in paths_x]
@@ -266,7 +266,7 @@ class PJRTWorker:
         num_batches = 0
         start = time.time()
         for j in range(10):
-            for batch in shard.iter_torch_batches(batch_size=256):
+            for batch in shard.iter_torch_batches(batch_size=bs):
                 batch = torch.as_tensor(batch["image"])
                 batch = xm.send_cpu_data_to_device(batch, device)
                 batch.to(device)            
@@ -287,6 +287,7 @@ PARSER.add_argument('-world_size', '--world_size', dest='world',  type=int, defa
 #PARSER.add_argument('-data_dir', '--data_dir', dest='data_dir',  type=str, default="gs://mlperf-dataset/data/2021_Brats_np/11_3d")
 PARSER.add_argument('-data_dir', '--data_dir', dest='data_dir',  type=str, default="/mnt/disks/persist/imagenet")
 PARSER.add_argument('-load_mode', '--load_mode', dest='load_mode',  type=str, default="simple")
+PARSER.add_argument('-bs', '--bs', dest='bs',  type=int, default=256)
 import numpy
 
 def crop_transform(arr: np.ndarray) -> np.ndarray:
@@ -319,7 +320,9 @@ if __name__ == '__main__':
             shards = ds.split(n=4, locality_hints=workers)
             ray.get([w.train.remote(s) for w, s in zip(workers, shards)])
         elif flags.load_mode == 'pjrt_thread':
-            ray.get([w.load.remote(flags.data_dir) for w in workers])
+            num_workers = prjt.global_device_count()
+            workers = [PJRTWorker.remote(i) for i in range(num_workers)]
+            ray.get([w.load.remote(flags.data_dir, flags.bs) for w in workers])
         else:
 
             splits = create_shuffle_image_data_pipeline(os.path.join(flags.data_dir, "train"), 1,  4, 224)
