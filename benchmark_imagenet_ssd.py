@@ -22,8 +22,10 @@ from torch.utils.data.distributed import DistributedSampler
 import torchvision
 import torchvision.transforms as transforms
 
-def random_split_data(paths, num_shards, shard_id):
-    x = [a.tolist() for a in np.array_split(paths, num_shards)]
+def random_split_data(data_size, num_shards, shard_id):
+    idx = [*range(0,data_size,1)]
+    #idx = np.random.shuffle(idx)
+    x = [a.tolist() for a in np.array_split(idx, num_shards)]
     return x[shard_id]
     
 def to_tensor(batch: np.ndarray) -> torch.Tensor:
@@ -252,11 +254,15 @@ class PJRTWorker:
     def load(self, data_dir, bs) -> int:
         with io.gfile.GFile(os.path.join(data_dir, 'imagenetindex_train.json')) as f:
             paths_x = json.load(f)
+
+        subset = random_split_data(len(paths_x), pt.global_device_count(), xm.get_ordinal())
+
+        paths_x = paths_x[subset]
+
+        # compond the path
         paths_x = [name.split('train/')[-1] for name in paths_x]
         path = os.path.join(flags.data_dir, "train")
         paths_x = [os.path.join(path, name) for name in paths_x]  
-
-        path = random_split_data(path, pt.global_device_count(), xm.get_ordinal())
         ds = ray.data.read_images(path, size=(224, 224), mode="RGB")
         local_rank = xm.get_ordinal()
         from pprint import pprint
