@@ -332,7 +332,7 @@ if __name__ == '__main__':
             shards = ds.split(n=4, locality_hints=workers)
             ray.get([w.train.remote(s, flags.bs) for w, s in zip(workers, shards)])
         elif flags.load_mode == 'pjrt_thread':
-            num_workers = pt.global_device_count()
+            num_workers = 4
             workers = [PJRTWorker.remote(i) for i in range(num_workers)]
             idx = range(0, num_workers, 1)
             ray.get([w.verify.remote(i) for w, i in zip(workers, idx)])
