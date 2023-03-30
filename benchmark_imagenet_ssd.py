@@ -256,7 +256,7 @@ class PJRTWorker:
         path = os.path.join(flags.data_dir, "train")
         paths_x = [os.path.join(path, name) for name in paths_x]  
 
-        path = random_split_data(path, pjrt.global_device_count(), xm.get_ordinal())
+        path = random_split_data(path, pt.global_device_count(), xm.get_ordinal())
         ds = ray.data.read_images(path, size=(224, 224), mode="RGB")
         local_rank = xm.get_ordinal()
         from pprint import pprint
